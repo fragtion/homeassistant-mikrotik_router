@@ -121,13 +121,6 @@ def parse_api(
         if key or key_search:
             uid = get_uid(entry, key, key_secondary, key_search, keymap)
             if not uid:
-                if debug:
-                    _LOGGER.debug(
-                        "Skipping entry (no UID found for key=%s, key_secondary=%s): %s",
-                        key,
-                        key_secondary,
-                        async_redact_data(entry, TO_REDACT),
-                    )
                 continue
 
             if uid not in data:
@@ -155,13 +148,20 @@ def get_uid(entry, key, key_secondary, key_search, keymap) -> Optional(str):
     """Get UID for data list."""
     uid = None
     if not key_search:
-        # Try primary key first; fall back to secondary if primary is missing or empty
-        if key in entry and entry[key]:
-            uid = entry[key]
-        elif key_secondary and key_secondary in entry and entry[key_secondary]:
-            uid = entry[key_secondary]
-        else:
+        key_primary_found = key in entry
+        if key_primary_found and key not in entry and not entry[key]:
             return None
+
+        if key_primary_found:
+            uid = entry[key]
+        elif key_secondary:
+            if key_secondary not in entry:
+                return None
+
+            if not entry[key_secondary]:
+                return None
+
+            uid = entry[key_secondary]
     elif keymap and key_search in entry and entry[key_search] in keymap:
         uid = keymap[entry[key_search]]
     else:
@@ -228,8 +228,8 @@ def fill_defaults(data, vals) -> dict:
 
         if _type == "str":
             _default = val["default"] if "default" in val else ""
-            if "default_val" in val and val["default_val"] in data:
-                _default = data[val["default_val"]]
+            if "default_val" in val and val["default_val"] in val:
+                _default = val[val["default_val"]]
 
             if _name not in data:
                 data[_name] = from_entry([], _source, default=_default)
@@ -258,8 +258,8 @@ def fill_vals(data, entry, uid, vals) -> dict:
 
         if _type == "str":
             _default = val["default"] if "default" in val else ""
-            if "default_val" in val and val["default_val"] in entry:
-                _default = entry[val["default_val"]]
+            if "default_val" in val and val["default_val"] in val:
+                _default = val[val["default_val"]]
 
             if uid:
                 data[uid][_name] = from_entry(entry, _source, default=_default)
