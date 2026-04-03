@@ -158,10 +158,7 @@ def get_uid(entry, key, key_secondary, key_search, keymap) -> Optional(str):
         # Try primary key first; fall back to secondary if primary is missing or empty
         if key in entry and entry[key]:
             uid = entry[key]
-        elif key_secondary:
-            if key_secondary not in entry or not entry[key_secondary]:
-                return None
-
+        elif key_secondary and key_secondary in entry and entry[key_secondary]:
             uid = entry[key_secondary]
         else:
             return None
